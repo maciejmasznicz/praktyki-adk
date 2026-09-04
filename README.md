@@ -4,7 +4,16 @@ source .venv_adk/bin/activate
 
 pip3 install --upgrade pip
 
-pip3 install google-adk litellm pandas python-dotenv mysql-connector-python sqlglot openpyxl xlrd
+python -m pip install \
+"google-adk[extensions]" \
+pandas \
+python-dotenv \
+mysql-connector-python \
+sqlglot \
+openpyxl \
+xlrd
+
+adk web
 
 OPENROUTER_API_KEY=
 
