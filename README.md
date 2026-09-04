@@ -1,4 +1,4 @@
-python3 -m venv .venv
+python3 -m venv praktyki_adk
 source .venv/bin/activate
 
-pip install google-adk pandas python-dotenv mysql-connector-python sqlglot openpyxl
+pip3 install google-adk pandas python-dotenv mysql-connector-python sqlglot openpyxl
