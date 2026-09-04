@@ -1,16 +1,13 @@
-# Python bytecode and caches
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Distribution and build artifacts
 .Python
 build/
 dist/
 *.egg-info/
 *.egg
 
-# Virtual environments
 .venv/
 venv/
 env/
@@ -20,16 +17,13 @@ ENV/
 /include/
 /pyvenv.cfg
 
-# Environment variables and local configuration
 .env
 .env.*
 !.env.example
 
-# Local ADK state and session databases
 .adk/
 session.db
 
-# Test, coverage, and type-checker artifacts
 .pytest_cache/
 .coverage
 .coverage.*
@@ -38,11 +32,9 @@ htmlcov/
 .pyre/
 .ruff_cache/
 
-# Jupyter and tool caches
 .ipynb_checkpoints/
 .cache/
 
-# IDE and operating-system files
 .vscode/
 .idea/
 .DS_Store

@@ -2,19 +2,15 @@
 python3 -m venv .venv_adk
 source .venv_adk/bin/activate
 
-python -m pip install \
-"google-adk[extensions]" \
-pandas \
-python-dotenv \
-mysql-connector-python \
-sqlglot \
-openpyxl \
-xlrd
+python -m pip install -r requirements.txt
 
 adk web
 ```
+
 ---
+
 .env.development w folderze adk
+
 ```env
 OPENROUTER_API_KEY=
 

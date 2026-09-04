@@ -1,0 +1,7 @@
+google-adk[extensions]
+pandas
+python-dotenv
+mysql-connector-python
+sqlglot
+openpyxl
+xlrd
