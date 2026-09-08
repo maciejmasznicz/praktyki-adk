@@ -7,9 +7,8 @@ from dotenv import load_dotenv
 
 
 load_dotenv(
-    Path(__file__).parent / ".env.development"
+    Path(__file__).resolve().parent.parent / ".env.development"
 )
-
 
 def read_data_file() -> dict:
     """

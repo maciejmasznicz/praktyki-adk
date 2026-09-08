@@ -5,18 +5,20 @@ from dotenv import load_dotenv
 from google.adk.agents.llm_agent import Agent
 from google.adk.models.lite_llm import LiteLlm
 
-from .db_sub_agent.db_sub_agent import db_sub_agent
-from .df_sub_agent.df_sub_agent import df_sub_agent
+from .sql_tools import (
+    get_database_schema,
+    execute_read_query,
+)
 
 
-env_path = Path(__file__).resolve().parent / ".env.development"
+env_path = Path(__file__).resolve().parent.parent / ".env.development"
 load_dotenv(env_path)
 
-prompt_path_from_env = os.getenv("ROOT_AGENT_PROMPT")
+prompt_path_from_env = os.getenv("DB_SUB_AGENT_PROMPT")
 
 if not prompt_path_from_env:
     raise ValueError(
-        "ROOT_AGENT_PROMPT is missing in .env.development"
+        "DB_SUB_AGENT_PROMPT is missing in .env.development"
     )
 
 prompt_path = Path(prompt_path_from_env)
@@ -29,19 +31,19 @@ if not prompt_path.exists():
 system_prompt = prompt_path.read_text(encoding="utf-8")
 
 
-root_agent = Agent(
+db_sub_agent = Agent(
     model=LiteLlm(
         model="openrouter/openai/gpt-5.6-luna"
         # model="ollama_chat/llama3.2:3b"
     ),
-    name="root_agent",
+    name="db_sub_agent",
     description=(
-        "The main coordinator that routes requests to the correct "
-        "database or file analysis sub-agent."
+        "Handles only questions about the configured MySQL database. "
+        "It must not analyze CSV, XLS, XLSX, Excel or spreadsheet files."
     ),
     instruction=system_prompt,
-    sub_agents=[
-        db_sub_agent,
-        df_sub_agent,
+    tools=[
+        get_database_schema,
+        execute_read_query,
     ],
 )

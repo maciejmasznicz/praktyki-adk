@@ -1,0 +1,5 @@
+opublikowac w gc
+ominac pobieranie schematu dla niektoruch zapytan
+
+podagenty
+ollama
