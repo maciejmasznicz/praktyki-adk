@@ -7,9 +7,7 @@ python -m pip install -r requirements.txt
 adk web
 ```
 
----
-
-.env.development w folderze adk
+Plik `adk/.env.development`:
 
 ```env
 OPENROUTER_API_KEY=
@@ -22,5 +20,7 @@ MYSQL_DATABASE=
 
 DATA_FILE_PATH=
 
-SYSTEM_PROMPT_PATH=
+ROOT_AGENT_PROMPT=prompts/root_agent_prompt.md
+DB_SUB_AGENT_PROMPT=prompts/db_sub_agent_prompt.md
+DF_SUB_AGENT_PROMPT=prompts/df_sub_agent_prompt.md
 ```

@@ -1,4 +1,5 @@
 google-adk[extensions]
+duckdb
 pandas
 python-dotenv
 mysql-connector-python

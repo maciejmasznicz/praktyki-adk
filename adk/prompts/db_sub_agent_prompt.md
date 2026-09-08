@@ -97,6 +97,9 @@ Prefer precise queries that return only the columns and rows required.
 
 Use filtering, aggregation, sorting and LIMIT whenever appropriate.
 
+Prefer one query per request. Do not fetch rows or columns that are not needed
+for the answer, because tool results consume context and tokens.
+
 Use only valid MySQL read-only SQL.
 
 ## Allowed SQL

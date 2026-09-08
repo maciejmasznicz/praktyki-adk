@@ -23,6 +23,9 @@ if not prompt_path_from_env:
 
 prompt_path = Path(prompt_path_from_env)
 
+if not prompt_path.is_absolute():
+    prompt_path = env_path.parent / prompt_path
+
 if not prompt_path.exists():
     raise FileNotFoundError(
         f"System prompt file does not exist: {prompt_path}"

@@ -1,11 +1,11 @@
 import os
-import re
-from datetime import date, datetime
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from pathlib import Path
 
 import mysql.connector
 import sqlglot
+from sqlglot import exp
 from dotenv import load_dotenv
 
 
@@ -15,16 +15,32 @@ load_dotenv(
 
 
 MAX_ROWS = 200
+MAX_QUERY_LENGTH = 10_000
+MAX_JOINS = 8
+MAX_RESULT_COLUMNS = 50
+MAX_CELL_CHARACTERS = 2_000
 
 
 def convert_to_json(value):
     """Converts database values to JSON-compatible values."""
 
     if isinstance(value, Decimal):
-        return float(value)
+        return str(value)
 
     if isinstance(value, (date, datetime)):
         return value.isoformat()
+
+    if isinstance(value, time):
+        return value.isoformat()
+
+    if isinstance(value, timedelta):
+        return str(value)
+
+    if isinstance(value, bytes):
+        return value.hex()[:MAX_CELL_CHARACTERS]
+
+    if isinstance(value, str) and len(value) > MAX_CELL_CHARACTERS:
+        return value[:MAX_CELL_CHARACTERS] + "…"
 
     return value
 
@@ -38,6 +54,7 @@ def connect_to_database():
         user=os.getenv("MYSQL_USER"),
         password=os.getenv("MYSQL_PASSWORD"),
         database=os.getenv("MYSQL_DATABASE"),
+        connection_timeout=10,
     )
 
 
@@ -58,9 +75,10 @@ def get_database_schema() -> dict:
 
         for table in tables:
             table_name = table[0]
+            escaped_table_name = str(table_name).replace("`", "``")
 
             cursor.execute(
-                f"DESCRIBE `{table_name}`"
+                f"DESCRIBE `{escaped_table_name}`"
             )
 
             columns = cursor.fetchall()
@@ -75,10 +93,10 @@ def get_database_schema() -> dict:
             "schema": schema,
         }
 
-    except Exception as error:
+    except Exception:
         return {
             "status": "error",
-            "message": str(error),
+            "message": "The database schema could not be read.",
         }
 
     finally:
@@ -99,73 +117,11 @@ def is_safe_read_query(query: str) -> tuple[bool, str]:
     if not query:
         return False, "The SQL query is empty."
 
-    if ";" in query:
-        return False, (
-            "Only one SQL query is allowed."
-        )
-
-    if (
-        "--" in query
-        or "#" in query
-        or "/*" in query
-        or "*/" in query
-    ):
-        return False, (
-            "SQL comments are not allowed."
-        )
-
-    if not (
-        query.lower().startswith("select")
-        or query.lower().startswith("with")
-    ):
-        return False, (
-            "Only SELECT queries are allowed."
-        )
-
-    forbidden_words = [
-        r"\binsert\b",
-        r"\bupdate\b",
-        r"\bdelete\b",
-        r"\bdrop\b",
-        r"\balter\b",
-        r"\bcreate\b",
-        r"\btruncate\b",
-        r"\breplace\b",
-        r"\bgrant\b",
-        r"\brevoke\b",
-        r"\bset\b",
-        r"\bcall\b",
-        r"\bload\b",
-        r"\block\b",
-        r"\bunlock\b",
-        r"\bcommit\b",
-        r"\brollback\b",
-        r"\boutfile\b",
-        r"\bdumpfile\b",
-    ]
-
-    for forbidden_word in forbidden_words:
-        if re.search(
-            forbidden_word,
-            query,
-            re.IGNORECASE
-        ):
-            return False, (
-                "Forbidden SQL command detected: "
-                f"{forbidden_word}"
-            )
-
-    if re.search(
-        r"\bfor\s+update\b",
-        query,
-        re.IGNORECASE
-    ):
-        return False, (
-            "FOR UPDATE is not allowed."
-        )
+    if len(query) > MAX_QUERY_LENGTH:
+        return False, "The SQL query is too long."
 
     try:
-        sqlglot.parse_one(
+        statements = sqlglot.parse(
             query,
             read="mysql"
         )
@@ -175,7 +131,57 @@ def is_safe_read_query(query: str) -> tuple[bool, str]:
             f"Invalid SQL query: {error}"
         )
 
+    statements = [statement for statement in statements if statement]
+
+    if len(statements) != 1:
+        return False, "Only one SQL query is allowed."
+
+    statement = statements[0]
+
+    if not isinstance(statement, exp.Select):
+        return False, "Only SELECT queries are allowed."
+
+    if any(node.comments for node in statement.walk()):
+        return False, "SQL comments are not allowed."
+
+    if statement.find(exp.Lock):
+        return False, "Locking reads are not allowed."
+
+    if statement.find(exp.Into):
+        return False, "SELECT INTO is not allowed."
+
+    if statement.find(exp.Anonymous):
+        return False, "Unsupported SQL function detected."
+
+    if len(list(statement.find_all(exp.Join))) > MAX_JOINS:
+        return False, "The SQL query contains too many joins."
+
+    with_clause = statement.args.get("with_")
+
+    if with_clause and with_clause.args.get("recursive"):
+        return False, "Recursive queries are not allowed."
+
+    for table in statement.find_all(exp.Table):
+        if table.catalog or table.db:
+            return False, "Cross-database queries are not allowed."
+
     return True, ""
+
+
+def prepare_limited_query(query: str) -> str:
+    """Applies a hard result limit while preserving a smaller literal LIMIT."""
+
+    statement = sqlglot.parse_one(query, read="mysql")
+    requested_limit = statement.args.get("limit")
+    safe_limit = MAX_ROWS + 1
+
+    if requested_limit:
+        limit_expression = requested_limit.expression
+
+        if isinstance(limit_expression, exp.Literal) and not limit_expression.is_string:
+            safe_limit = min(int(limit_expression.this), MAX_ROWS + 1)
+
+    return statement.copy().limit(safe_limit).sql(dialect="mysql")
 
 
 def execute_read_query(query: str) -> dict:
@@ -202,7 +208,7 @@ def execute_read_query(query: str) -> dict:
         connection = connect_to_database()
         cursor = connection.cursor()
 
-        cursor.execute(query)
+        cursor.execute(prepare_limited_query(query))
 
         rows = cursor.fetchmany(MAX_ROWS + 1)
 
@@ -210,6 +216,18 @@ def execute_read_query(query: str) -> dict:
             column[0]
             for column in cursor.description
         ]
+
+        if len(column_names) != len(set(column_names)):
+            return {
+                "status": "error",
+                "message": "Query result columns must have unique names or aliases.",
+            }
+
+        if len(column_names) > MAX_RESULT_COLUMNS:
+            return {
+                "status": "error",
+                "message": "The query result exceeds the 50-column limit.",
+            }
 
         too_many_rows = len(rows) > MAX_ROWS
 
@@ -237,10 +255,10 @@ def execute_read_query(query: str) -> dict:
             ),
         }
 
-    except Exception as error:
+    except Exception:
         return {
             "status": "error",
-            "message": str(error),
+            "message": "The database query could not be executed.",
         }
 
     finally:

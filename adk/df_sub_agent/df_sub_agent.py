@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from google.adk.agents.llm_agent import Agent
 from google.adk.models.lite_llm import LiteLlm
 
-from .data_tools import read_data_file
+from .data_tools import execute_data_query, get_data_schema
 
 
 env_path = Path(__file__).resolve().parent.parent / ".env.development"
@@ -19,6 +19,9 @@ if not prompt_path_from_env:
     )
 
 prompt_path = Path(prompt_path_from_env)
+
+if not prompt_path.is_absolute():
+    prompt_path = env_path.parent / prompt_path
 
 if not prompt_path.exists():
     raise FileNotFoundError(
@@ -40,6 +43,7 @@ df_sub_agent = Agent(
     ),
     instruction=system_prompt,
     tools=[
-        read_data_file,
+        get_data_schema,
+        execute_data_query,
     ],
 )
