@@ -1,0 +1,37 @@
+activity_id,activity_date,employee_id,employee_name,department,client_id,client_name,project_id,project_name,activity_type,hours,billable,hourly_rate,revenue,cost,profit_margin,activity_status,client_satisfaction,region,channel
+1,2024-01-08,6,Katarzyna Lewandowska,IT,1,Nordic Solutions,1,Cloud Migration 2024,Cloud architecture,7.5,true,145.00,1087.50,650.00,40.23,Completed,5,Northern Europe,Direct
+2,2024-01-10,7,Michal Zielinski,IT,1,Nordic Solutions,1,Cloud Migration 2024,Database migration,8.0,true,138.00,1104.00,720.00,34.78,In Progress,4,Northern Europe,Direct
+3,2024-01-12,13,Robert Krawczyk,IT,1,Nordic Solutions,1,Cloud Migration 2024,Deployment pipeline,6.5,true,95.00,617.50,390.00,36.84,In Progress,4,Northern Europe,Direct
+4,2024-01-15,10,Olivia Kozlowska,Marketing,2,Green Market Sp. z o.o.,2,Retail Analytics Platform,Dashboard design,7.0,true,105.00,735.00,410.00,44.22,In Progress,5,Central Europe,Email
+5,2024-01-18,13,Robert Krawczyk,IT,2,Green Market Sp. z o.o.,2,Retail Analytics Platform,Data modelling,8.0,true,95.00,760.00,430.00,43.42,Completed,4,Central Europe,Direct
+6,2024-01-22,8,Karolina Szymanska,Sales,3,Baltic Logistics,, ,Client meeting,4.0,true,120.00,480.00,180.00,62.50,Completed,5,Central Europe,Meeting
+7,2024-01-25,12,Natalia Mazur,Support,3,Baltic Logistics,, ,Technical support,6.5,false,85.00,0.00,552.50,0.00,Completed,4,Central Europe,Ticket
+8,2024-02-02,7,Michal Zielinski,IT,3,Baltic Logistics,3,Warehouse Automation,Sensor integration,9.0,true,138.00,1242.00,720.00,42.03,Completed,5,Central Europe,Direct
+9,2024-02-05,6,Katarzyna Lewandowska,IT,4,Euro Construction,4,Infrastructure Security Audit,Security analysis,7.0,true,145.00,1015.00,610.00,39.90,In Progress,4,Western Europe,Direct
+10,2024-02-08,9,Pawel Dabrowski,Sales,4,Euro Construction,, ,Contract negotiation,5.5,true,98.00,539.00,230.00,57.33,Completed,5,Western Europe,Meeting
+11,2024-02-12,10,Olivia Kozlowska,Marketing,5,Cloud Factory,, ,Campaign planning,6.0,true,105.00,630.00,280.00,55.56,Completed,4,Southern Europe,Email
+12,2024-02-15,13,Robert Krawczyk,IT,5,Cloud Factory,5,Healthcare Portal,API development,8.0,true,95.00,760.00,450.00,40.79,In Progress,4,Southern Europe,Direct
+13,2024-02-19,12,Natalia Mazur,Support,6,Health Plus,, ,Support ticket,5.0,false,85.00,0.00,425.00,0.00,Completed,3,Central Europe,Ticket
+14,2024-02-22,6,Katarzyna Lewandowska,IT,6,Health Plus,5,Healthcare Portal,API development,8.0,true,145.00,1160.00,720.00,37.93,In Progress,5,Central Europe,Direct
+15,2024-02-26,7,Michal Zielinski,IT,7,Urban Energy,4,Infrastructure Security Audit,Security audit,6.0,true,138.00,828.00,420.00,49.28,In Progress,4,Western Europe,Direct
+16,2024-03-01,8,Karolina Szymanska,Sales,7,Urban Energy,, ,Quarterly review,3.5,true,120.00,420.00,155.00,63.10,Completed,5,Western Europe,Meeting
+17,2024-03-04,13,Robert Krawczyk,IT,6,Health Plus,5,Healthcare Portal,Frontend development,7.5,true,95.00,712.50,390.00,45.26,In Progress,4,Central Europe,Direct
+18,2024-03-08,10,Olivia Kozlowska,Marketing,8,Smart Education,6,Digital Learning Platform,UX research,5.5,true,105.00,577.50,260.00,54.98,Planned,5,Central Europe,Workshop
+19,2024-03-12,7,Michal Zielinski,IT,7,Urban Energy,4,Infrastructure Security Audit,Vulnerability assessment,6.0,true,138.00,828.00,430.00,48.07,In Progress,4,Western Europe,Direct
+20,2024-03-15,12,Natalia Mazur,Support,8,Smart Education,, ,User support,7.0,false,85.00,0.00,595.00,0.00,Completed,4,Central Europe,Ticket
+21,2024-03-19,9,Pawel Dabrowski,Sales,9,Fresh Food Group,, ,Product presentation,4.5,true,98.00,441.00,190.00,56.92,Completed,5,Central Europe,Meeting
+22,2024-03-22,6,Katarzyna Lewandowska,IT,10,Oceanic Telecom,1,Cloud Migration 2024,Cloud architecture,7.5,true,145.00,1087.50,620.00,42.99,In Progress,4,Western Europe,Direct
+23,2024-03-26,13,Robert Krawczyk,IT,10,Oceanic Telecom,1,Cloud Migration 2024,Infrastructure configuration,8.0,true,95.00,760.00,410.00,46.05,In Progress,4,Western Europe,Direct
+24,2024-04-02,10,Olivia Kozlowska,Marketing,2,Green Market Sp. z o.o.,2,Retail Analytics Platform,Marketing campaign,7.0,true,105.00,735.00,310.00,57.82,Completed,5,Central Europe,Email
+25,2024-04-05,8,Karolina Szymanska,Sales,3,Baltic Logistics,, ,Renewal negotiation,5.0,true,120.00,600.00,240.00,60.00,Completed,4,Central Europe,Meeting
+26,2024-04-09,12,Natalia Mazur,Support,4,Euro Construction,, ,Technical support,6.0,false,85.00,0.00,510.00,0.00,Completed,4,Western Europe,Ticket
+27,2024-04-12,7,Michal Zielinski,IT,3,Baltic Logistics,3,Warehouse Automation,Database integration,8.5,true,138.00,1173.00,680.00,42.03,Completed,5,Central Europe,Direct
+28,2024-04-16,6,Katarzyna Lewandowska,IT,6,Health Plus,5,Healthcare Portal,Security review,6.5,true,145.00,942.50,490.00,48.01,In Progress,5,Central Europe,Direct
+29,2024-04-19,13,Robert Krawczyk,IT,8,Smart Education,6,Digital Learning Platform,Backend development,7.5,true,95.00,712.50,380.00,46.67,Planned,4,Central Europe,Direct
+30,2024-04-23,10,Olivia Kozlowska,Marketing,7,Urban Energy,, ,Content strategy,6.0,true,105.00,630.00,280.00,55.56,Completed,5,Western Europe,Workshop
+31,2024-04-26,9,Pawel Dabrowski,Sales,10,Oceanic Telecom,, ,Account review,4.0,true,98.00,392.00,150.00,61.73,Completed,4,Western Europe,Meeting
+32,2024-05-02,12,Natalia Mazur,Support,5,Cloud Factory,, ,License support,5.5,false,85.00,0.00,467.50,0.00,Completed,3,Southern Europe,Ticket
+33,2024-05-06,6,Katarzyna Lewandowska,IT,1,Nordic Solutions,1,Cloud Migration 2024,Migration testing,8.0,true,145.00,1160.00,580.00,50.00,In Progress,5,Northern Europe,Direct
+34,2024-05-09,7,Michal Zielinski,IT,1,Nordic Solutions,1,Cloud Migration 2024,Database optimization,7.5,true,138.00,1035.00,500.00,51.69,In Progress,4,Northern Europe,Direct
+35,2024-05-13,10,Olivia Kozlowska,Marketing,8,Smart Education,6,Digital Learning Platform,Campaign design,6.5,true,105.00,682.50,270.00,60.44,Planned,5,Central Europe,Email
+36,2024-05-17,8,Karolina Szymanska,Sales,6,Health Plus,, ,Upselling meeting,4.5,true,120.00,540.00,190.00,64.81,Completed,5,Central Europe,Meeting
