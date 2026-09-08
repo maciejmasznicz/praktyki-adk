@@ -1,17 +1,11 @@
-import os
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
-from pathlib import Path
 
 import mysql.connector
 import sqlglot
 from sqlglot import exp
-from dotenv import load_dotenv
 
-
-load_dotenv(
-    Path(__file__).resolve().parent.parent / ".env.development"
-)
+from ..config import get_setting
 
 
 MAX_ROWS = 200
@@ -49,11 +43,11 @@ def connect_to_database():
     """Connects to the database."""
 
     return mysql.connector.connect(
-        host=os.getenv("MYSQL_HOST"),
-        port=int(os.getenv("MYSQL_PORT", "3306")),
-        user=os.getenv("MYSQL_USER"),
-        password=os.getenv("MYSQL_PASSWORD"),
-        database=os.getenv("MYSQL_DATABASE"),
+        host=get_setting("MYSQL_HOST"),
+        port=int(get_setting("MYSQL_PORT", "3306") or "3306"),
+        user=get_setting("MYSQL_USER"),
+        password=get_setting("MYSQL_PASSWORD"),
+        database=get_setting("MYSQL_DATABASE"),
         connection_timeout=10,
     )
 
@@ -156,9 +150,10 @@ def is_safe_read_query(query: str) -> tuple[bool, str]:
     if len(list(statement.find_all(exp.Join))) > MAX_JOINS:
         return False, "The SQL query contains too many joins."
 
-    with_clause = statement.args.get("with_")
-
-    if with_clause and with_clause.args.get("recursive"):
+    if any(
+        with_clause.args.get("recursive")
+        for with_clause in statement.find_all(exp.With)
+    ):
         return False, "Recursive queries are not allowed."
 
     for table in statement.find_all(exp.Table):

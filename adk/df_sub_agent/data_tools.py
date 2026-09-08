@@ -1,4 +1,3 @@
-import os
 import zipfile
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
@@ -7,12 +6,10 @@ from pathlib import Path
 import duckdb
 import pandas as pd
 import sqlglot
-from dotenv import load_dotenv
 from sqlglot import exp
 
+from ..config import ENV_PATH, get_setting
 
-ENV_PATH = Path(__file__).resolve().parent.parent / ".env.development"
-load_dotenv(ENV_PATH)
 
 DATA_TABLE = "data"
 SUPPORTED_EXTENSIONS = {".csv", ".xls", ".xlsx"}
@@ -32,7 +29,7 @@ def _error(message: str) -> dict:
 
 
 def _get_data_file_path() -> tuple[Path | None, str | None]:
-    configured_path = os.getenv("DATA_FILE_PATH")
+    configured_path = get_setting("DATA_FILE_PATH")
 
     if not configured_path:
         return None, "DATA_FILE_PATH is missing in .env.development."
@@ -110,6 +107,15 @@ def _open_database() -> duckdb.DuckDBPyConnection:
             [DATA_TABLE],
         ).fetchone()[0]
 
+        row_count = connection.execute(
+            f"SELECT COUNT(*) FROM {DATA_TABLE}"
+        ).fetchone()[0]
+
+        if row_count > MAX_SOURCE_ROWS:
+            raise ValueError(
+                "The configured data file exceeds the 100,000-row limit."
+            )
+
         if column_count > MAX_COLUMNS:
             raise ValueError("The configured data file exceeds the 200-column limit.")
 
@@ -176,9 +182,10 @@ def _prepare_safe_query(query: str) -> tuple[str | None, str | None]:
     if len(list(statement.find_all(exp.Join))) > MAX_JOINS:
         return None, "The SQL query contains too many joins."
 
-    with_clause = statement.args.get("with_")
-
-    if with_clause and with_clause.args.get("recursive"):
+    if any(
+        with_clause.args.get("recursive")
+        for with_clause in statement.find_all(exp.With)
+    ):
         return None, "Recursive queries are not allowed."
 
     cte_names = {
@@ -187,8 +194,12 @@ def _prepare_safe_query(query: str) -> tuple[str | None, str | None]:
     }
 
     allowed_tables = {DATA_TABLE, *cte_names}
+    tables = list(statement.find_all(exp.Table))
 
-    for table in statement.find_all(exp.Table):
+    if not any(table.name.lower() == DATA_TABLE for table in tables):
+        return None, f"The query must read from the '{DATA_TABLE}' table."
+
+    for table in tables:
         if not isinstance(table.this, exp.Identifier):
             return None, "Table functions are not allowed."
 
