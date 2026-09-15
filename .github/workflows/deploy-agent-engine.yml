@@ -45,7 +45,9 @@ jobs:
       - name: Install ADK CLI
         run: |
           python -m pip install --upgrade pip
-          python -m pip install "google-adk>=2.9.0"
+          python -m pip install \
+            "google-adk>=2.9.0" \
+            "google-cloud-aiplatform[agent_engines]>=2.1.0"
 
       - name: Validate deployment configuration
         env:
