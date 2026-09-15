@@ -1,0 +1,140 @@
+name: Deploy ADK agent to Agent Engine
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "adk/**"
+      - ".github/workflows/deploy-agent-engine.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  DEPLOY_REGION: ${{ vars.AGENT_ENGINE_REGION }}
+  DISPLAY_NAME: ${{ vars.AGENT_ENGINE_DISPLAY_NAME }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WIF_PROVIDER }}
+          service_account: ${{ vars.GCP_SERVICE_ACCOUNT }}
+
+      - name: Set up Google Cloud CLI
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          project_id: ${{ env.PROJECT_ID }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14.7"
+
+      - name: Install ADK CLI
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "google-adk>=2.9.0"
+
+      - name: Validate deployment configuration
+        env:
+          GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+          AGENT_ENGINE_REGION: ${{ vars.AGENT_ENGINE_REGION }}
+          AGENT_ENGINE_DISPLAY_NAME: ${{ vars.AGENT_ENGINE_DISPLAY_NAME }}
+          GCP_WIF_PROVIDER: ${{ vars.GCP_WIF_PROVIDER }}
+          GCP_SERVICE_ACCOUNT: ${{ vars.GCP_SERVICE_ACCOUNT }}
+          GOOGLE_CLOUD_LOCATION: ${{ vars.GOOGLE_CLOUD_LOCATION }}
+          GOOGLE_GENAI_USE_ENTERPRISE: ${{ vars.GOOGLE_GENAI_USE_ENTERPRISE }}
+          MODEL_NAME: ${{ vars.MODEL_NAME }}
+          DATA_FILE_PATH: ${{ vars.DATA_FILE_PATH }}
+          ROOT_AGENT_PROMPT: ${{ vars.ROOT_AGENT_PROMPT }}
+          DB_SUB_AGENT_PROMPT: ${{ vars.DB_SUB_AGENT_PROMPT }}
+          DF_SUB_AGENT_PROMPT: ${{ vars.DF_SUB_AGENT_PROMPT }}
+        run: |
+          required_vars=(
+            GCP_PROJECT_ID AGENT_ENGINE_REGION AGENT_ENGINE_DISPLAY_NAME
+            GCP_WIF_PROVIDER GCP_SERVICE_ACCOUNT GOOGLE_CLOUD_LOCATION
+            GOOGLE_GENAI_USE_ENTERPRISE MODEL_NAME DATA_FILE_PATH
+            ROOT_AGENT_PROMPT DB_SUB_AGENT_PROMPT DF_SUB_AGENT_PROMPT
+          )
+
+          for variable_name in "${required_vars[@]}"; do
+            if [[ -z "${!variable_name:-}" ]]; then
+              echo "::error::Missing GitHub repository variable: ${variable_name}"
+              exit 1
+            fi
+          done
+
+          if [[ "${GOOGLE_GENAI_USE_ENTERPRISE}" != "true" && "${GOOGLE_GENAI_USE_ENTERPRISE}" != "True" && "${GOOGLE_GENAI_USE_ENTERPRISE}" != "1" ]]; then
+            echo "::error::GOOGLE_GENAI_USE_ENTERPRISE must be true, True, or 1"
+            exit 1
+          fi
+
+          for path_value in "${DATA_FILE_PATH}" "${ROOT_AGENT_PROMPT}" "${DB_SUB_AGENT_PROMPT}" "${DF_SUB_AGENT_PROMPT}"; do
+            if [[ "${path_value}" == /* || "${path_value}" == *$'\n'* || "${path_value}" == *$'\r'* ]]; then
+              echo "::error::Configured application paths must be relative single-line paths"
+              exit 1
+            fi
+          done
+
+          test -f "adk/${DATA_FILE_PATH}" || {
+            echo "::error::Missing data file: adk/${DATA_FILE_PATH}"
+            exit 1
+          }
+          test -f "adk/${ROOT_AGENT_PROMPT}" || {
+            echo "::error::Missing prompt file: adk/${ROOT_AGENT_PROMPT}"
+            exit 1
+          }
+          test -f "adk/${DB_SUB_AGENT_PROMPT}" || {
+            echo "::error::Missing prompt file: adk/${DB_SUB_AGENT_PROMPT}"
+            exit 1
+          }
+          test -f "adk/${DF_SUB_AGENT_PROMPT}" || {
+            echo "::error::Missing prompt file: adk/${DF_SUB_AGENT_PROMPT}"
+            exit 1
+          }
+
+      - name: Create deployment environment file
+        working-directory: adk
+        env:
+          GOOGLE_CLOUD_PROJECT: ${{ vars.GCP_PROJECT_ID }}
+          GOOGLE_CLOUD_LOCATION: ${{ vars.GOOGLE_CLOUD_LOCATION }}
+          GOOGLE_GENAI_USE_ENTERPRISE: ${{ vars.GOOGLE_GENAI_USE_ENTERPRISE }}
+          MODEL_NAME: ${{ vars.MODEL_NAME }}
+          DATA_FILE_PATH: ${{ vars.DATA_FILE_PATH }}
+          ROOT_AGENT_PROMPT: ${{ vars.ROOT_AGENT_PROMPT }}
+          DB_SUB_AGENT_PROMPT: ${{ vars.DB_SUB_AGENT_PROMPT }}
+          DF_SUB_AGENT_PROMPT: ${{ vars.DF_SUB_AGENT_PROMPT }}
+        run: |
+          {
+            printf '%s\n' "GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}"
+            printf '%s\n' "GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}"
+            printf '%s\n' "GOOGLE_GENAI_USE_ENTERPRISE=${GOOGLE_GENAI_USE_ENTERPRISE}"
+            printf '%s\n' "MODEL_NAME=${MODEL_NAME}"
+            printf '%s\n' "DATA_FILE_PATH=${DATA_FILE_PATH}"
+            printf '%s\n' "ROOT_AGENT_PROMPT=${ROOT_AGENT_PROMPT}"
+            printf '%s\n' "DB_SUB_AGENT_PROMPT=${DB_SUB_AGENT_PROMPT}"
+            printf '%s\n' "DF_SUB_AGENT_PROMPT=${DF_SUB_AGENT_PROMPT}"
+          } > .env.development
+          chmod 600 .env.development
+
+      - name: Deploy to Agent Engine
+        env:
+          GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY: "true"
+        run: |
+          adk deploy agent_engine \
+            --project="${PROJECT_ID}" \
+            --region="${DEPLOY_REGION}" \
+            --display_name="${DISPLAY_NAME}" \
+            ./adk
