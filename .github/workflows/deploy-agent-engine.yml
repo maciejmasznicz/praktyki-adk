@@ -124,6 +124,9 @@ jobs:
             printf '%s\n' "GOOGLE_CLOUD_LOCATION=${GOOGLE_CLOUD_LOCATION}"
             printf '%s\n' "GOOGLE_GENAI_USE_ENTERPRISE=${GOOGLE_GENAI_USE_ENTERPRISE}"
             printf '%s\n' "MODEL_NAME=${MODEL_NAME}"
+            printf '%s\n' "GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY=true"
+            printf '%s\n' "OTEL_SEMCONV_STABILITY_OPT_IN=gen_ai_latest_experimental"
+            printf '%s\n' "OTEL_INSTRUMENTATION_GENAI_CAPTURE_MESSAGE_CONTENT=EVENT_ONLY"
             printf '%s\n' "DATA_FILE_PATH=${DATA_FILE_PATH}"
             printf '%s\n' "ROOT_AGENT_PROMPT=${ROOT_AGENT_PROMPT}"
             printf '%s\n' "DB_SUB_AGENT_PROMPT=${DB_SUB_AGENT_PROMPT}"
@@ -132,11 +135,10 @@ jobs:
           chmod 600 .env.development
 
       - name: Deploy to Agent Engine
-        env:
-          GOOGLE_CLOUD_AGENT_ENGINE_ENABLE_TELEMETRY: "true"
         run: |
           adk deploy agent_engine \
             --project="${PROJECT_ID}" \
             --region="${DEPLOY_REGION}" \
             --display_name="${DISPLAY_NAME}" \
+            --otel_to_cloud \
             ./adk
