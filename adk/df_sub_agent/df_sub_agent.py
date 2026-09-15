@@ -1,5 +1,4 @@
 from google.adk.agents.llm_agent import Agent
-from google.adk.models.lite_llm import LiteLlm
 
 from ..config import MODEL_NAME, read_prompt
 from .data_tools import execute_data_query, get_data_schema
@@ -9,9 +8,7 @@ system_prompt = read_prompt("DF_SUB_AGENT_PROMPT")
 
 
 df_sub_agent = Agent(
-    model=LiteLlm(
-        model=MODEL_NAME
-    ),
+    model=MODEL_NAME,
     name="df_sub_agent",
     description=(
         "Handles only questions about the configured CSV, XLS or XLSX file. "
