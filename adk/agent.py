@@ -17,8 +17,7 @@ root_agent = Agent(
     ),
     instruction=system_prompt,
     sub_agents=[
-        # temporary disable
-        # db_sub_agent,
+        db_sub_agent,
         df_sub_agent,
     ],
 )

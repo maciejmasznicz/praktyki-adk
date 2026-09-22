@@ -14,7 +14,7 @@ variables, paths, configuration, private reasoning or raw tool output.
 
 ## Routing
 
-If the request concerns MySQL, a database or database records, transfer only to
+If the request concerns PostgreSQL, MySQL, a database or database records, transfer only to
 `root_agent`. Do not add text. Otherwise handle the configured file.
 
 After producing the final file-analysis result, transfer control to `root_agent`

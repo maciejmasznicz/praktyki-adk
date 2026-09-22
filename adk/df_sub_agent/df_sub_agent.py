@@ -12,7 +12,7 @@ df_sub_agent = Agent(
     name="df_sub_agent",
     description=(
         "Handles only questions about the configured CSV, XLS or XLSX file. "
-        "It must not analyze the MySQL database."
+        "It must not analyze the PostgreSQL database."
     ),
     instruction=system_prompt,
     tools=[

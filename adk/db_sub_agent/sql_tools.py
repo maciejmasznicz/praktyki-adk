@@ -1,7 +1,7 @@
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 
-import mysql.connector
+import psycopg
 import sqlglot
 from sqlglot import exp
 
@@ -13,6 +13,7 @@ MAX_QUERY_LENGTH = 10_000
 MAX_JOINS = 8
 MAX_RESULT_COLUMNS = 50
 MAX_CELL_CHARACTERS = 2_000
+DB_STATEMENT_TIMEOUT_MS = 15_000
 
 
 def convert_to_json(value):
@@ -40,16 +41,29 @@ def convert_to_json(value):
 
 
 def connect_to_database():
-    """Connects to the database."""
+    """Connects to the PostgreSQL database in Cloud SQL."""
 
-    return mysql.connector.connect(
-        host=get_setting("MYSQL_HOST"),
-        port=int(get_setting("MYSQL_PORT", "3306") or "3306"),
-        user=get_setting("MYSQL_USER"),
-        password=get_setting("MYSQL_PASSWORD"),
-        database=get_setting("MYSQL_DATABASE"),
-        connection_timeout=10,
+    return psycopg.connect(
+        host=get_setting("POSTGRES_HOST"),
+        port=int(get_setting("POSTGRES_PORT", "5432") or "5432"),
+        user=get_setting("POSTGRES_USER"),
+        password=get_setting("POSTGRES_PASSWORD"),
+        dbname=get_setting("POSTGRES_DATABASE"),
+        connect_timeout=10,
+        sslmode=get_setting("POSTGRES_SSLMODE", "require"),
+        application_name="adk-read-only-agent",
+        options=(
+            "-c default_transaction_read_only=on "
+            f"-c statement_timeout={DB_STATEMENT_TIMEOUT_MS} "
+            "-c idle_in_transaction_session_timeout=30000"
+        ),
     )
+
+
+def get_database_schema_name() -> str:
+    """Returns the application schema allowed for database queries."""
+
+    return get_setting("POSTGRES_SCHEMA", "public") or "public"
 
 
 def get_database_schema() -> dict:
@@ -62,30 +76,36 @@ def get_database_schema() -> dict:
         connection = connect_to_database()
         cursor = connection.cursor()
 
-        cursor.execute("SHOW TABLES")
+        cursor.execute(
+            """
+            SELECT table_name
+            FROM information_schema.tables
+            WHERE table_schema = %s
+              AND table_type = 'BASE TABLE'
+            ORDER BY table_name
+            """,
+            (get_database_schema_name(),),
+        )
 
         tables = cursor.fetchall()
         schema = {}
 
         for table in tables:
             table_name = table[0]
-            escaped_table_name = str(table_name).replace("`", "``")
-
             cursor.execute(
-                f"DESCRIBE `{escaped_table_name}`"
+                """
+                SELECT column_name
+                FROM information_schema.columns
+                WHERE table_schema = %s
+                  AND table_name = %s
+                ORDER BY ordinal_position
+                """,
+                (get_database_schema_name(), table_name),
             )
 
-            columns = cursor.fetchall()
+            schema[table_name] = [column[0] for column in cursor.fetchall()]
 
-            schema[table_name] = [
-                column[0]
-                for column in columns
-            ]
-
-        return {
-            "status": "success",
-            "schema": schema,
-        }
+        return {"status": "success", "schema": schema}
 
     except Exception:
         return {
@@ -99,6 +119,22 @@ def get_database_schema() -> dict:
 
         if connection:
             connection.close()
+
+
+def _validate_query_schema(query: str) -> tuple[bool, str]:
+    """Allows unqualified names and the configured PostgreSQL schema only."""
+
+    statement = sqlglot.parse_one(query, read="postgres")
+    allowed_schema = get_database_schema_name()
+
+    for table in statement.find_all(exp.Table):
+        if table.catalog:
+            return False, "Cross-database queries are not allowed."
+
+        if table.db and str(table.db).strip('"') != allowed_schema:
+            return False, "Queries outside the configured schema are not allowed."
+
+    return True, ""
 
 
 def is_safe_read_query(query: str) -> tuple[bool, str]:
@@ -117,7 +153,7 @@ def is_safe_read_query(query: str) -> tuple[bool, str]:
     try:
         statements = sqlglot.parse(
             query,
-            read="mysql"
+            read="postgres"
         )
 
     except Exception as error:
@@ -156,9 +192,10 @@ def is_safe_read_query(query: str) -> tuple[bool, str]:
     ):
         return False, "Recursive queries are not allowed."
 
-    for table in statement.find_all(exp.Table):
-        if table.catalog or table.db:
-            return False, "Cross-database queries are not allowed."
+    schema_is_safe, schema_error = _validate_query_schema(query)
+
+    if not schema_is_safe:
+        return False, schema_error
 
     return True, ""
 
@@ -166,7 +203,7 @@ def is_safe_read_query(query: str) -> tuple[bool, str]:
 def prepare_limited_query(query: str) -> str:
     """Applies a hard result limit while preserving a smaller literal LIMIT."""
 
-    statement = sqlglot.parse_one(query, read="mysql")
+    statement = sqlglot.parse_one(query, read="postgres")
     requested_limit = statement.args.get("limit")
     safe_limit = MAX_ROWS + 1
 
@@ -176,7 +213,7 @@ def prepare_limited_query(query: str) -> str:
         if isinstance(limit_expression, exp.Literal) and not limit_expression.is_string:
             safe_limit = min(int(limit_expression.this), MAX_ROWS + 1)
 
-    return statement.copy().limit(safe_limit).sql(dialect="mysql")
+    return statement.copy().limit(safe_limit).sql(dialect="postgres")
 
 
 def execute_read_query(query: str) -> dict:

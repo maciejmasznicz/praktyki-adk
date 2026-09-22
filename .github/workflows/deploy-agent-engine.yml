@@ -63,12 +63,21 @@ jobs:
           ROOT_AGENT_PROMPT: ${{ vars.ROOT_AGENT_PROMPT }}
           DB_SUB_AGENT_PROMPT: ${{ vars.DB_SUB_AGENT_PROMPT }}
           DF_SUB_AGENT_PROMPT: ${{ vars.DF_SUB_AGENT_PROMPT }}
+          POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
+          POSTGRES_DATABASE: ${{ vars.POSTGRES_DATABASE }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_SCHEMA: ${{ vars.POSTGRES_SCHEMA }}
+          POSTGRES_SSLMODE: ${{ vars.POSTGRES_SSLMODE }}
         run: |
           required_vars=(
             GCP_PROJECT_ID AGENT_ENGINE_REGION AGENT_ENGINE_DISPLAY_NAME
             GCP_WIF_PROVIDER GCP_SERVICE_ACCOUNT GOOGLE_CLOUD_LOCATION
             GOOGLE_GENAI_USE_ENTERPRISE MODEL_NAME DATA_FILE_PATH
             ROOT_AGENT_PROMPT DB_SUB_AGENT_PROMPT DF_SUB_AGENT_PROMPT
+            POSTGRES_HOST POSTGRES_PORT POSTGRES_DATABASE POSTGRES_USER
+            POSTGRES_PASSWORD POSTGRES_SCHEMA POSTGRES_SSLMODE
           )
 
           for variable_name in "${required_vars[@]}"; do
@@ -118,6 +127,13 @@ jobs:
           ROOT_AGENT_PROMPT: ${{ vars.ROOT_AGENT_PROMPT }}
           DB_SUB_AGENT_PROMPT: ${{ vars.DB_SUB_AGENT_PROMPT }}
           DF_SUB_AGENT_PROMPT: ${{ vars.DF_SUB_AGENT_PROMPT }}
+          POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
+          POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
+          POSTGRES_DATABASE: ${{ vars.POSTGRES_DATABASE }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          POSTGRES_SCHEMA: ${{ vars.POSTGRES_SCHEMA }}
+          POSTGRES_SSLMODE: ${{ vars.POSTGRES_SSLMODE }}
         run: |
           {
             printf '%s\n' "GOOGLE_CLOUD_PROJECT=${GOOGLE_CLOUD_PROJECT}"
@@ -131,6 +147,13 @@ jobs:
             printf '%s\n' "ROOT_AGENT_PROMPT=${ROOT_AGENT_PROMPT}"
             printf '%s\n' "DB_SUB_AGENT_PROMPT=${DB_SUB_AGENT_PROMPT}"
             printf '%s\n' "DF_SUB_AGENT_PROMPT=${DF_SUB_AGENT_PROMPT}"
+            printf '%s\n' "POSTGRES_HOST=${POSTGRES_HOST}"
+            printf '%s\n' "POSTGRES_PORT=${POSTGRES_PORT}"
+            printf '%s\n' "POSTGRES_DATABASE=${POSTGRES_DATABASE}"
+            printf '%s\n' "POSTGRES_USER=${POSTGRES_USER}"
+            printf '%s\n' "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}"
+            printf '%s\n' "POSTGRES_SCHEMA=${POSTGRES_SCHEMA:-public}"
+            printf '%s\n' "POSTGRES_SSLMODE=${POSTGRES_SSLMODE:-require}"
           } > .env.development
           chmod 600 .env.development
 

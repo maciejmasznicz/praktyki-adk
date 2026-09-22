@@ -14,7 +14,8 @@ db_sub_agent = Agent(
     model=MODEL_NAME,
     name="db_sub_agent",
     description=(
-        "Handles only questions about the configured MySQL database. "
+        "Handles only questions about the configured PostgreSQL database in "
+        "Google Cloud SQL. "
         "It must not analyze CSV, XLS, XLSX, Excel or spreadsheet files."
     ),
     instruction=system_prompt,
