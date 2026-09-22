@@ -3,7 +3,6 @@ from decimal import Decimal
 
 import psycopg
 import sqlglot
-from google.cloud.sql.connector import Connector, IPTypes
 from psycopg import errors as psycopg_errors
 from sqlglot import exp
 
@@ -16,7 +15,6 @@ MAX_JOINS = 8
 MAX_RESULT_COLUMNS = 50
 MAX_CELL_CHARACTERS = 2_000
 DB_STATEMENT_TIMEOUT_MS = 15_000
-_cloud_sql_connector = None
 
 
 def convert_to_json(value):
@@ -45,29 +43,6 @@ def convert_to_json(value):
 
 def connect_to_database():
     """Connects to the PostgreSQL database in Cloud SQL."""
-
-    instance_connection_name = get_setting("CLOUD_SQL_CONNECTION_NAME")
-
-    if instance_connection_name:
-        global _cloud_sql_connector
-
-        if _cloud_sql_connector is None:
-            _cloud_sql_connector = Connector()
-
-        return _cloud_sql_connector.connect(
-            instance_connection_name,
-            "psycopg",
-            user=get_setting("POSTGRES_USER"),
-            password=get_setting("POSTGRES_PASSWORD"),
-            dbname=get_setting("POSTGRES_DATABASE"),
-            ip_type=IPTypes.PUBLIC,
-            application_name="adk-read-only-agent",
-            options=(
-                "-c default_transaction_read_only=on "
-                f"-c statement_timeout={DB_STATEMENT_TIMEOUT_MS} "
-                "-c idle_in_transaction_session_timeout=30000"
-            ),
-        )
 
     return psycopg.connect(
         host=get_setting("POSTGRES_HOST"),
