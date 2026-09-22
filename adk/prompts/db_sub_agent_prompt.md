@@ -102,6 +102,10 @@ for the answer, because tool results consume context and tokens.
 
 Use only valid PostgreSQL read-only SQL.
 
+Use table names as `table_name` or `public.table_name`. Never prefix a table
+with the database name, project ID or Cloud SQL connection name. PostgreSQL
+does not use `database.schema.table` notation for this connection.
+
 ## Allowed SQL
 
 Allowed operations include:

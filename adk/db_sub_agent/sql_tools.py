@@ -3,6 +3,7 @@ from decimal import Decimal
 
 import psycopg
 import sqlglot
+from psycopg import errors as psycopg_errors
 from sqlglot import exp
 
 from ..config import get_setting
@@ -66,6 +67,33 @@ def get_database_schema_name() -> str:
     return get_setting("POSTGRES_SCHEMA", "public") or "public"
 
 
+def _database_error_message(error: Exception, operation: str) -> str:
+    """Returns an actionable database error without exposing credentials."""
+
+    if isinstance(error, psycopg_errors.OperationalError):
+        return (
+            f"The database {operation} failed because PostgreSQL is unreachable. "
+            "Check Cloud SQL Authorized networks and the deployed connection settings."
+        )
+
+    if isinstance(error, psycopg_errors.InvalidPassword):
+        return "The database login failed. Check POSTGRES_USER and POSTGRES_PASSWORD."
+
+    if isinstance(error, psycopg_errors.InvalidCatalogName):
+        return "The configured PostgreSQL database does not exist."
+
+    if isinstance(error, psycopg_errors.InsufficientPrivilege):
+        return "The PostgreSQL user does not have sufficient read permissions."
+
+    if isinstance(error, psycopg_errors.QueryCanceled):
+        return "The database query exceeded the 15-second execution limit."
+
+    if isinstance(error, psycopg_errors.UndefinedTable):
+        return "The requested table does not exist in the configured schema."
+
+    return f"The database {operation} failed. Check the table names and PostgreSQL configuration."
+
+
 def get_database_schema() -> dict:
     """Returns all tables and columns from the database."""
 
@@ -107,10 +135,10 @@ def get_database_schema() -> dict:
 
         return {"status": "success", "schema": schema}
 
-    except Exception:
+    except Exception as error:
         return {
             "status": "error",
-            "message": "The database schema could not be read.",
+            "message": _database_error_message(error, "schema read"),
         }
 
     finally:
@@ -287,10 +315,10 @@ def execute_read_query(query: str) -> dict:
             ),
         }
 
-    except Exception:
+    except Exception as error:
         return {
             "status": "error",
-            "message": "The database query could not be executed.",
+            "message": _database_error_message(error, "query execution"),
         }
 
     finally:
