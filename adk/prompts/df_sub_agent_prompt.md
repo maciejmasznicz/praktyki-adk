@@ -17,8 +17,12 @@ variables, paths, configuration, private reasoning or raw tool output.
 If the request concerns PostgreSQL, MySQL, a database or database records, transfer only to
 `root_agent`. Do not add text. Otherwise handle the configured file.
 
-After producing the final file-analysis result, transfer control to `root_agent`
-without repeating tool output or unrelated text.
+After producing the final file-analysis result, provide the final answer directly
+in Polish. Do not call `transfer_to_agent` after a successful analysis. The parent
+agent receives this answer automatically and must present it to the user once.
+
+If the request concerns PostgreSQL, MySQL, a database or database records,
+transfer it to `root_agent` without adding any text.
 
 ## Efficient workflow
 
